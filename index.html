@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { padding: 3px; position: fixed; bottom: 0;height: 8vh; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; height: 100%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255);height: 100%; border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0;min-height: 85vh; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      .derecha{text-align: right;}
+      .izquierda{text-align: left;}
+      #chat{border-left: solid black 1px;
+      -webkit-box-shadow: -12px 0px 19px -13px rgba(0,0,0,0.75);
+      -moz-box-shadow: -12px 0px 19px -13px rgba(0,0,0,0.75);
+      box-shadow: -12px 0px 19px -13px rgba(0,0,0,0.75);}
+      #usuarios{height: 2vh};
+      #escribiendo{height: 2vh}
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        $(function () {
+          var socket = io();
+          let usuario = prompt("Inserta tu nombre de usuario");
+          socket.emit('username',usuario);
+          $('form').submit(function(e){
+            e.preventDefault(); // prevents page reloading
+            if ( $('#m').val() != ''){
+              socket.emit('chat message', {msg:$('#m').val(),autor:usuario});
+              $('#m').val('');
+              return false;
+            }
+          });
+          socket.on('usuarios', function(msg){
+            $('#usuarios').html("Numero de usuarios conectados: "+msg);
+          });
+          socket.on('chat message', function(msg){
+            mensaje = $('<li>').html(msg.autor+": "+msg.mensaje)
+            if (msg.autor == usuario){
+              $(mensaje).addClass("derecha")
+            } else {
+              $(mensaje).addClass("izquierda")
+            }
+            $('#messages').append(mensaje);
+          });
+          socket.on('escribiendoCliente',function(msg){
+            $('#escribiendo').text(msg+" esta escribiendo...")  
+            setTimeout(() => {
+              $('#escribiendo').text('')
+            }, 5000);
+             
+          })
+          $('#m').keypress(function(){
+            console.log("mensage"+$('#m').val())
+            if($('#m').val() != '')
+              socket.emit('escribiendo',usuario);     
+          })
+        });
+    </script>
+  </head>
+  <body>
+    <main class="container row">
+      <aside class="col-3">
+
+      </aside>
+      <section id="chat" class="col-9 row">
+        <p class="col-12" id="usuarios"></p>
+        <p class="col-12" id="escribiendo"></p>
+        <ul class="col-12"id="messages"></ul>
+        <form action="" class="col-12">
+          <input id="m" autocomplete="off" /><button>Send</button>
+        </form>
+      </section>
+    </main>
+  </body>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</html>
