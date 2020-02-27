@@ -22,11 +22,13 @@
       #escribiendo{height: 2vh}
     </style>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="/siofu/client.js"></script>
     <script>
         $(function () {
           var socket = io();
+          var uploader = new SocketIOFileUpload(socket)
+          uploader.listenOnInput(document.getElementById("siofu_input"))
           let usuario = prompt("Inserta tu nombre de usuario");
           socket.emit('username',usuario);
           $('form').submit(function(e){
@@ -75,6 +77,7 @@
         <ul class="col-12"id="messages"></ul>
         <form action="" class="col-12">
           <input id="m" autocomplete="off" /><button>Send</button>
+          <input type="file" id="siofu_input" style="color: transparent; height:50px; width:40px;"/>
         </form>
       </section>
     </main>

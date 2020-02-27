@@ -1,16 +1,23 @@
-var app = require('express')();
+var siofu = require("socketio-file-upload");
+var express = require('express')
+var app = express()
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
+app.use(siofu.router);
+app.use(express.static(__dirname + '/public'))
 var conectados = 0;
 var listaUsers = []; 
 
-app.get('/', function(req, res){
-  res.sendFile(__dirname + '/index.html');
-});
 
 io.on('connection', function(socket){
     console.log('a user connected');
     conectados++
+    var uploader = new siofu();
+    uploader.dir = "./public/archivos";
+    uploader.listen(socket);
+    uploader.on('complete',function(event){
+      console.log(event)
+    })
     socket.on('username',function(msg){
       
     })
