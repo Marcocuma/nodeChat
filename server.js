@@ -10,7 +10,7 @@ var conectados = 0;
 var listaUsers = [{msg:"Chat general",id:"general",img:"perfil/s1.jpg"}]; 
 
 function compruebaClientes(users){
-  let idClientes = Object.keys(io.sockets.sockets)
+  let idClientes = Object.keys(io.sockets.sockets)me
   console.log(idClientes)
   listaUsers = listaUsers.filter(element => {
     console.log(element)
@@ -36,7 +36,7 @@ function cambiarDatosCliente(datos){
     listaUsers.push({msg:datos.msg,id:datos.id,img:datos.img})
 }
 io.on('connection', function(socket){
-    console.log('a user connected');
+    console.log('a user connectedede');
     conectados++
     var uploader = new siofu();
     socket.on('create', function(room) {
