@@ -172,7 +172,7 @@
             }
             let tipoArchivo = ruta.arch.split(".")
             tipoArchivo = tipoArchivo[tipoArchivo.length-1]
-            if(tipoArchivo == "jpg" || tipoArchivo == "jpeg" || tipoArchivo == "png" || tipoArchivo == "gif"){
+            if(tipoArchivo == "jpg" || tipoArchivo == "jpeg" || tipoArchivo == "png" || tipoArchivo == "gif" || tipoArchivo == "PNG" || tipoArchivo == "GIF"){
               imagen = $('<img>').attr('src',ruta.arch)
               $(imagen).addClass('imagenChat')
               $(mensaje).append(imagen)
