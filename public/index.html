@@ -3,54 +3,206 @@
   <head>
     <title>Socket.IO chat</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Anton&display=swap" rel="stylesheet">
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
       form { padding: 3px; position: fixed; bottom: 0;height: 8vh; width: 100%; }
-      form input { border: 0; padding: 10px; width: 90%; height: 100%; margin-right: .5%; }
+      form input { border-radius: 5px; border: 0.5px solid rgba(0, 0, 0, 0.267); padding: 10px; width: 90%; height: 100%; margin-right: .5%; }
       form button { width: 9%; background: rgb(130, 224, 255);height: 100%; border: none; padding: 10px; }
       #messages { list-style-type: none; margin: 0; padding: 0;min-height: 85vh; }
       #messages li { padding: 5px 10px; }
-      #messages li:nth-child(odd) { background: #eee; }
-      .derecha{text-align: right;}
-      .izquierda{text-align: left;}
+      .derecha{text-align: right; background-color: greenyellow; border: 1px solid rgba(0, 0, 0, 0); border-radius: 8px;margin-left: 50%;}
+      .izquierda{text-align: left; background-color: white; border: 1px solid rgba(0, 0, 0, 0); border-radius: 8px;margin-right: 50%;}
       #chat{border-left: solid black 1px;
       -webkit-box-shadow: -12px 0px 19px -13px rgba(0,0,0,0.75);
       -moz-box-shadow: -12px 0px 19px -13px rgba(0,0,0,0.75);
-      box-shadow: -12px 0px 19px -13px rgba(0,0,0,0.75);}
-      #usuarios{height: 2vh};
-      #escribiendo{height: 2vh}
+      box-shadow: -12px 0px 19px -13px rgba(0,0,0,0.75);
+      background-image: url('wallpapers/wallpaperDef.png');}
+      #usuarios{font-family: 'Anton' ;
+        font-weight: bold;
+        font-size: 1.4em;}
+      #mensajes{height: 85vh;}
+      .imagenChat{
+        height: 12vw;
+      }
+      .imgIt{
+        height: 3em;
+      }
+      .imgClip{
+        height: 5em;
+      }
+      .imgPerfil{
+        height: 4.5em;
+        width: 4.5em;
+        -webkit-box-shadow: 2px 3px 14px -1px rgba(0,0,0,0.75);
+        -moz-box-shadow: 2px 3px 14px -1px rgba(0,0,0,0.75);
+        box-shadow: 2px 3px 14px -1px rgba(0,0,0,0.75);
+        border-radius: 50%;
+      }
+      #headChat{
+        height: 7vh;
+        background-color: rgb(255, 255, 255);
+        -webkit-box-shadow: 2px 29px 41px -19px rgba(0,0,0,0.75);
+        -moz-box-shadow: 2px 29px 41px -19px rgba(0,0,0,0.75);
+        box-shadow: 2px 29px 41px -19px rgba(0,0,0,0.75);
+        border-bottom: solid rgba(0, 0, 0, 0.568) 0.5px;
+      }
+      .tituloUser{
+        font-family: 'Anton' ;
+        font-size: 1.4em;
+      }
+      #tituloChat{
+        font-weight: bold;
+      }
+      #headTitle{
+        flex-direction: column;
+      }
+      .botonImg{
+        height: 7em;
+        width: 8em;
+      }
+      #contenedorLista{
+        height: 84vh;
+      }
+      #headLista{
+        box-shadow: inset 0px 0px 6px 0px rgba(0,0,0,0.75);
+        border-bottom: solid rgba(0, 0, 0, 0.568) 0.5px;
+      }
+      li p {
+        word-break: break-all;
+        word-wrap: break-word;
+      }
     </style>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="/siofu/client.js"></script>
     <script>
+      function crearRoom(user1,user2){
+        if (user1.id != "general" && user2.id != "general"){
+          let room = [user1.id,user2.id].sort()
+          return room.join(" ")
+        }
+        return "general"
+      }
         $(function () {
           var socket = io();
-          var uploader = new SocketIOFileUpload(socket)
+          var uploader = new SocketIOFileUpload(socket);
+          var room = "general"
+          var img = "perfil/p1.jpg"
+          var usuario = "Pred"
+          var selectedUser = "general"
+          $('.modalNombre').modal({backdrop: 'static', keyboard: false})
+          $(".modalNombre").modal("show")
+          socket.emit('create', room);
           uploader.listenOnInput(document.getElementById("siofu_input"))
-          let usuario = prompt("Inserta tu nombre de usuario");
-          socket.emit('username',usuario);
+
+          $(".botonImg").click(function(event){
+            img = event.currentTarget.getElementsByTagName('img')[0].src
+          })
+
+          $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+          })
+
+          uploader.addEventListener("start", function(event){
+              event.file.meta.usr = usuario;
+              event.file.meta.id = socket.id;
+              event.file.meta.room = room;
+          });
+
+          socket.on('connect', () => {
+            socket.emit('username',{msg:usuario,id:socket.id,img:img});
+          });
+
+          $("#datosModal").click(() => {
+            if($("#selecNombre")[0].value && $("#selecNombre")[0].value.length <= 20){
+              usuario = $("#selecNombre")[0].value
+              socket.emit('username',{msg:usuario,id:socket.id,img:img});
+              $("#tituloUser").text(usuario)
+              $("#imgHeadLista").attr('src',img)
+              $(".modalNombre").modal("hide")
+            } else {
+              $("#selecNombre")[0].value = ""
+            }
+          })
+
+          socket.on('reconnect', () => {
+            console.log("reconectado")
+          });
           $('form').submit(function(e){
             e.preventDefault(); // prevents page reloading
             if ( $('#m').val() != ''){
-              socket.emit('chat message', {msg:$('#m').val(),autor:usuario});
+              socket.emit('chat message', {msg:$('#m').val(),usr:usuario,room:room,id:socket.id});
               $('#m').val('');
-              return false;
             }
           });
+
           socket.on('usuarios', function(msg){
-            $('#usuarios').html("Numero de usuarios conectados: "+msg);
+            $('#usuarios').html(msg);
           });
-          socket.on('chat message', function(msg){
-            mensaje = $('<li>').html(msg.autor+": "+msg.mensaje)
-            if (msg.autor == usuario){
-              $(mensaje).addClass("derecha")
+
+          socket.on('fotoSubida',function(ruta){
+            console.log(ruta)
+            mensaje = $('<li>').html(ruta.usr+": ")
+            if (ruta.id == socket.id){
+              $(mensaje).addClass("derecha mt-1 mb-1")
             } else {
-              $(mensaje).addClass("izquierda")
+              $(mensaje).addClass("izquierda mt-1 mb-1")
             }
+            imagen = $('<img>').attr('src',ruta.arch)
+            $(imagen).addClass('imagenChat')
+            $(mensaje).append(imagen)
             $('#messages').append(mensaje);
+          })
+
+          socket.on('listaUsers',function(users){
+            $("#listaUsers").empty()
+            users.forEach(element => {
+              if(element.id != socket.id){
+                let item = $("<li>")
+                $(item).click(function(){
+                  selectedUser = element.msg
+                  room = crearRoom({usr:usuario,id:socket.id},{usr:element.msg,id:element.id})
+                  console.log(room)
+                  socket.emit('create', room);
+                  $('#messages').empty()
+                  $("#tituloChat").text(element.msg)
+                  $("#imgHead").attr("src",element.img)
+                })
+                let p = $('<p>').text(element.msg)
+                let img = $('<img>')
+                $(img).attr("src",element.img)
+                $(img).addClass("imgPerfil")
+                $(p).addClass("tituloUser pt-2 m-0")
+                $(item).append(p)
+                $(item).append(img)
+                $(item).addClass("list-group-item list-group-item-action list-group-item-dark d-flex justify-content-around")
+                $("#listaUsers").append(item)
+                if(element.msg == selectedUser){
+                  $("#tituloChat").text(element.msg)
+                  $("#imgHead").attr("src",element.img)
+                }
+              }
+            });
+          })
+
+          socket.on('chat message', function(msg){
+            if(msg.room == "general")
+              mensaje = $('<p>').text(msg.usr+": "+String(msg.mensaje))
+            else 
+              mensaje = $('<p>').text(String(msg.mensaje))
+            li = $("<li>")
+            $(mensaje).addClass("m-0")
+            $(li).append(mensaje)
+            if (msg.id == socket.id){
+              $(li).addClass("derecha mt-1 mb-1")
+            } else {
+              $(li).addClass("izquierda mt-1 mb-1")
+            }
+            $('#messages').append(li);
           });
+
           socket.on('escribiendoCliente',function(msg){
             $('#escribiendo').text(msg+" esta escribiendo...")  
             setTimeout(() => {
@@ -58,29 +210,79 @@
             }, 5000);
              
           })
+
           $('#m').keypress(function(){
             console.log("mensage"+$('#m').val())
             if($('#m').val() != '')
-              socket.emit('escribiendo',usuario);     
+              socket.emit('escribiendo',{usr:usuario,room:room});     
           })
         });
     </script>
   </head>
   <body>
-    <main class="container row">
-      <aside class="col-3">
-
+    <main class="container-flex row p-0 m-0">
+      <aside class="col-3 p-0">
+        <div id="headLista" class="col-12 p-1 d-flex justify-content-around">
+          <div id="headTitleLista" class="d-flex align-items-center justify-content-center tituloUser">
+            <p id="tituloUser" class="m-0 w-100">Pred</p>
+          </div>
+          <img id="imgHeadLista" src="perfil/p1.jpg" class="imgPerfil">
+        </div>
+        <div id="numeroConectados" class="col-12 p-1 d-flex justify-content-around">
+          <div class="d-flex align-items-center justify-content-center tituloUser">
+            <p class="p-0 m-0 text-center" data-toggle="tooltip" data-placement="top" title="Usuarios Conectados" id="usuarios"></p>
+          </div>
+        </div>
+        <div class="overflow-auto" id="contenedorLista">
+          <ul id="listaUsers" class="m-0 p-0 list-group">
+          </ul>
+        </div>
+        <button type="button" class="btn btn-primary w-100" data-toggle="modal" data-target=".modalNombre">Editar Perfil</button>
       </aside>
-      <section id="chat" class="col-9 row">
-        <p class="col-12" id="usuarios"></p>
-        <p class="col-12" id="escribiendo"></p>
-        <ul class="col-12"id="messages"></ul>
-        <form action="" class="col-12">
-          <input id="m" autocomplete="off" /><button>Send</button>
-          <input type="file" id="siofu_input" style="color: transparent; height:50px; width:40px;"/>
+      <section id="chat" class="col-9 row m-0 p-0">
+        <div id="headChat" class="col-12 p-1 d-flex">
+          <img id="imgHead" src="perfil/s1.jpg" class="imgPerfil">
+          <div id="headTitle" class="ml-3 d-flex align-items-center justify-content-center tituloUser">
+            <p id="tituloChat" class="m-0 w-100">Chat general</p>
+            <p class="m-0 p-0 w-100" id="escribiendo"></p>
+          </div>
+        </div>
+        <div id="mensajes" class="overflow-auto col-12">
+          <ul class="col-12"id="messages"></ul>
+        </div>
+        <form action="" class="col-12 row m-0">
+          <input id="m" autocomplete="off" class="col-8 m-0"/><button class="col-2 btn btn-primary"><img src="interfaz/ev.png" class="imgIt"/></button>
+          <label for="siofu_input" class="col-2 d-flex align-items-center justify-content-center m-0"><img src="interfaz/ad.png" class="imgClip"></label>
+          <input type="file" id="siofu_input" style="display:none ;"/>
         </form>
       </section>
     </main>
+
+    <div class="modal fade modalNombre" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Perfil</h5>
+          </div>
+          <div class="modal-body">
+            <div class="container-flex">
+              <h3>Nombre</h3>
+              <small class="form-text text-muted">Tienes que escribir un nombre que contenga como maximo 20 caracteres</small>
+              <input type="text" id="selecNombre">
+              <h3>Avatar</h3>
+              <div class="list-group d-flex flex-row">
+                <button type="button" class="list-group-item list-group-item-action botonImg"><img src="perfil/p1.jpg" class="imgPerfil"></button>
+                <button type="button" class="list-group-item list-group-item-action botonImg"><img src="perfil/p2.jpg" class="imgPerfil"></button>
+                <button type="button" class="list-group-item list-group-item-action botonImg"><img src="perfil/p3.jpg" class="imgPerfil"></button>
+                <button type="button" class="list-group-item list-group-item-action botonImg"><img src="perfil/p4.jpg" class="imgPerfil"></button>
+                <button type="button" class="list-group-item list-group-item-action botonImg"><img src="perfil/p5.jpg" class="imgPerfil"></button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" id="datosModal" class="btn btn-primary">Save changes</button>
+          </div>
+      </div>
   </body>
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
