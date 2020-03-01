@@ -161,7 +161,10 @@
           });
 
           socket.on('fotoSubida',function(ruta){
-            mensaje = $('<li>').html(ruta.usr+": ")
+            if(ruta.room == "general")
+              mensaje = $('<li>').html(ruta.usr+": ")
+            else
+              mensaje = $('<li>').html("")
             if (ruta.id == socket.id){
               $(mensaje).addClass("derecha mt-1 mb-1")
             } else {
