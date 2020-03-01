@@ -1,4 +1,5 @@
 var siofu = require("socketio-file-upload");
+var port = process.env.PORT || 8080;
 var express = require('express')
 var app = express()
 var http = require('http').createServer(app);
@@ -71,6 +72,6 @@ io.on('connection', function(socket){
     })
 });
 
-http.listen(3000, function(){
-  console.log('listening on *:3000');
+http.listen(port, function(){
+  console.log('listening on '+port);
 });
