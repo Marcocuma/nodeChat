@@ -10,7 +10,7 @@ var conectados = 0;
 var listaUsers = [{msg:"Chat general",id:"general",img:"perfil/s1.jpg"}]; 
 
 function compruebaClientes(users){
-  let idClientes = Object.keys(io.sockets.sockets)me
+  let idClientes = Object.keys(io.sockets.sockets)
   console.log(idClientes)
   listaUsers = listaUsers.filter(element => {
     console.log(element)
@@ -40,14 +40,13 @@ io.on('connection', function(socket){
     conectados++
     var uploader = new siofu();
     socket.on('create', function(room) {
-      socket.leaveAll();
       socket.join(room);
     });
     uploader.dir = "./public/archivos";
     uploader.listen(socket);
     uploader.on('complete',function(event){
       console.log(event['file']['pathName'].substr(7))
-      io.sockets.in(event['file']['meta']['room']).emit('fotoSubida',{arch:event['file']['pathName'].substr(7),id:event['file']['meta']['id'],usr:event['file']['meta']['usr']})
+      io.sockets.in(event['file']['meta']['room']).emit('fotoSubida',{arch:event['file']['pathName'].substr(7),id:event['file']['meta']['id'],usr:event['file']['meta']['usr'],room:event['file']['meta']['room'],name:event['file']['name']})
     })
     socket.on('username',function(msg){
       cambiarDatosCliente(msg)
@@ -62,13 +61,13 @@ io.on('connection', function(socket){
         io.emit('listaUsers',listaUsers)
     });
     socket.on('chat message', function(msg){
-        io.sockets.in(msg.room).emit('chat message', {mensaje:msg.msg, usr:msg.usr, id:msg.id, room:msg.room});
+        io.sockets.emit('chat message', {mensaje:msg.msg, usr:msg.usr, id:msg.id, room:msg.room});
         console.log('message: ' + msg.room);
     });
     io.emit('usuarios',conectados)
     socket.on('escribiendo', function(msg){
       if(msg != '')
-        socket.broadcast.in(msg.room).emit('escribiendoCliente',msg.usr)
+        socket.broadcast.emit('escribiendoCliente',{usr:msg.usr,room:msg.room})
     })
 });
 

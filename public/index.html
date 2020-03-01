@@ -78,12 +78,29 @@
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="/siofu/client.js"></script>
     <script>
+      var logMensajes = {'general':[]}
+      var numMensajes = {'general':0}
       function crearRoom(user1,user2){
         if (user1.id != "general" && user2.id != "general"){
           let room = [user1.id,user2.id].sort()
-          return room.join(" ")
+          return room.join("")
         }
         return "general"
+      }
+      function anadirMensajes(room, item){
+        if(logMensajes[room])
+          logMensajes[room].push(item)
+        else{
+          logMensajes[room] = []
+          logMensajes[room].push(item)
+        }
+      }
+      function cargarMensajes(room){
+        if(logMensajes[room])
+        logMensajes[room].forEach((element) => {
+          $('#messages').append(element);
+        })
+        numMensajes[room] = 0
       }
         $(function () {
           var socket = io();
@@ -130,6 +147,7 @@
           socket.on('reconnect', () => {
             console.log("reconectado")
           });
+
           $('form').submit(function(e){
             e.preventDefault(); // prevents page reloading
             if ( $('#m').val() != ''){
@@ -143,40 +161,64 @@
           });
 
           socket.on('fotoSubida',function(ruta){
-            console.log(ruta)
             mensaje = $('<li>').html(ruta.usr+": ")
             if (ruta.id == socket.id){
               $(mensaje).addClass("derecha mt-1 mb-1")
             } else {
               $(mensaje).addClass("izquierda mt-1 mb-1")
             }
-            imagen = $('<img>').attr('src',ruta.arch)
-            $(imagen).addClass('imagenChat')
-            $(mensaje).append(imagen)
-            $('#messages').append(mensaje);
+            let tipoArchivo = ruta.arch.split(".")
+            tipoArchivo = tipoArchivo[tipoArchivo.length-1]
+            if(tipoArchivo == "jpg" || tipoArchivo == "jpeg" || tipoArchivo == "png" || tipoArchivo == "gif"){
+              imagen = $('<img>').attr('src',ruta.arch)
+              $(imagen).addClass('imagenChat')
+              $(mensaje).append(imagen)
+            } else {
+              link = $('<a>').attr('href',ruta.arch)
+              $(link).text(ruta.name)
+              $(mensaje).append(link)
+            }
+            if(ruta.room == room){
+              $('#messages').append(mensaje);
+            } else{
+              numMensajes[ruta.room]++
+              $("#"+ruta.room).text(numMensajes[ruta.room])
+            }
+            anadirMensajes(ruta.room,mensaje)
           })
 
           socket.on('listaUsers',function(users){
             $("#listaUsers").empty()
             users.forEach(element => {
+              //Crea la conexion con todos los usuarios
               if(element.id != socket.id){
+                var roomP = crearRoom({usr:usuario,id:socket.id},{usr:element.msg,id:element.id})
+                socket.emit('create', roomP);
+                if(!numMensajes[roomP])
+                    numMensajes[roomP] = 0
                 let item = $("<li>")
                 $(item).click(function(){
+                  //cuando hace click cambia la room actual
                   selectedUser = element.msg
-                  room = crearRoom({usr:usuario,id:socket.id},{usr:element.msg,id:element.id})
-                  console.log(room)
-                  socket.emit('create', room);
+                  room = roomP
                   $('#messages').empty()
                   $("#tituloChat").text(element.msg)
                   $("#imgHead").attr("src",element.img)
+                  $("#"+room).text("")
+                  cargarMensajes(room)
                 })
+                //añade los usuarios a la lista
                 let p = $('<p>').text(element.msg)
                 let img = $('<img>')
+                let badge = $('<p>')
+                $(badge).addClass("badge badge-info p-2 mt-3 mb-3")
+                $(badge).attr('id',roomP)
                 $(img).attr("src",element.img)
                 $(img).addClass("imgPerfil")
-                $(p).addClass("tituloUser pt-2 m-0")
+                $(p).addClass("tituloUser pt-3 m-0")
                 $(item).append(p)
                 $(item).append(img)
+                $(item).append(badge)
                 $(item).addClass("list-group-item list-group-item-action list-group-item-dark d-flex justify-content-around")
                 $("#listaUsers").append(item)
                 if(element.msg == selectedUser){
@@ -188,6 +230,7 @@
           })
 
           socket.on('chat message', function(msg){
+            let mensage = ""
             if(msg.room == "general")
               mensaje = $('<p>').text(msg.usr+": "+String(msg.mensaje))
             else 
@@ -200,15 +243,27 @@
             } else {
               $(li).addClass("izquierda mt-1 mb-1")
             }
-            $('#messages').append(li);
+            console.log("eweew")
+            //Si el mensaje va a la misma room donde se encuentra el usuario, lo añade al chat y al diccionario, si no solo al diccionario
+            if(msg.room == room){
+              anadirMensajes(msg.room,li)
+              $('#messages').append(li);
+            } else {
+              anadirMensajes(msg.room,li)
+              numMensajes[msg.room]++
+              console.log("aaaa"+msg.room)
+              $("#"+msg.room).text(numMensajes[msg.room])
+            }
           });
 
           socket.on('escribiendoCliente',function(msg){
-            $('#escribiendo').text(msg+" esta escribiendo...")  
-            setTimeout(() => {
-              $('#escribiendo').text('')
-            }, 5000);
-             
+            //Si el evento va a la misma room donde se encuentra el usuario, muestra el mensaje de que alguien esta escribiendo
+            if(msg.room == room){
+              $('#escribiendo').text(msg.usr+" esta escribiendo...")  
+              setTimeout(() => {
+                $('#escribiendo').text('')
+              }, 5000);
+            }
           })
 
           $('#m').keypress(function(){
@@ -270,12 +325,12 @@
               <small class="form-text text-muted">Tienes que escribir un nombre que contenga como maximo 20 caracteres</small>
               <input type="text" id="selecNombre">
               <h3>Avatar</h3>
-              <div class="list-group d-flex flex-row">
-                <button type="button" class="list-group-item list-group-item-action botonImg"><img src="perfil/p1.jpg" class="imgPerfil"></button>
-                <button type="button" class="list-group-item list-group-item-action botonImg"><img src="perfil/p2.jpg" class="imgPerfil"></button>
-                <button type="button" class="list-group-item list-group-item-action botonImg"><img src="perfil/p3.jpg" class="imgPerfil"></button>
-                <button type="button" class="list-group-item list-group-item-action botonImg"><img src="perfil/p4.jpg" class="imgPerfil"></button>
-                <button type="button" class="list-group-item list-group-item-action botonImg"><img src="perfil/p5.jpg" class="imgPerfil"></button>
+              <div class="row">
+                <button type="button" class="list-group-item list-group-item-action botonImg col-4 col-lg-2"><img src="perfil/p1.jpg" class="imgPerfil"></button>
+                <button type="button" class="list-group-item list-group-item-action botonImg col-4 col-lg-2"><img src="perfil/p2.jpg" class="imgPerfil"></button>
+                <button type="button" class="list-group-item list-group-item-action botonImg col-4 col-lg-2"><img src="perfil/p3.jpg" class="imgPerfil"></button>
+                <button type="button" class="list-group-item list-group-item-action botonImg col-4 col-lg-2"><img src="perfil/p4.jpg" class="imgPerfil"></button>
+                <button type="button" class="list-group-item list-group-item-action botonImg col-4 col-lg-2"><img src="perfil/p5.jpg" class="imgPerfil"></button>
               </div>
             </div>
           </div>

@@ -1,0 +1,8 @@
+-vue-
+--- Instalar vue cli = npm install -g vue-cli
+--- Crear proyecto = vue init
+--- Abrir server = npm run serve
+--- Crear version prod = npm run build
+--- Instalar bootstrap = npm i bootstrap jquery popper.js/ añadir en el main.js import 'bootstrap'; import 'bootstrap/dist/css/bootstrap.min.css';
+--- Instalar VueRouter = npm install vue-router/ import VueRouter from 'vue-router' Vue.use(VueRouter)
+--- Crear componente = vgc footer
